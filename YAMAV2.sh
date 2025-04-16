@@ -1,152 +1,139 @@
 #!/bin/bash
+# YAMA TOOLS by Emperor Sukuna
+# WhatsApp: +2250501889640
+# Instagram: j.m.h.2024
 
-# Script YAMAV2 - By Emperor Sukuna | WhatsApp: +2250501889640
+# Protection: empêche la modification
+chmod 555 $0
 
-# Fonction pour afficher le logo YAMA
-display_logo() {
-    clear
-    echo "  __     _____     ____   ____    _____    "
-    echo " |  |   |  _  |   |  _  | |  _  |  |  _  |   "
-    echo " |__|   | |_| |   | |_| | | |__| |  | |_| |   "
-    echo "       ___   ___   ___   ___  ___   ___   "
-    echo "YAMA TECH | by Emperor Sukuna"
-    echo "WhatsApp: +2250501889640"
-    echo "-------------------------------------------"
-    echo ""
+# Couleurs
+cyan='\033[0;36m'
+green='\033[1;32m'
+red='\033[1;31m'
+reset='\033[0m'
+
+# Logo YAMA
+logo() {
+clear
+echo -e "${red}
+__     ______  __  __      _      
+\ \   / / __ \|  \/  |    | |     
+ \ \_/ / |  | | \  / | ___| |__  
+  \   /| |  | | |\/| |/ _ \ '_ \ 
+   | | | |__| | |  | |  __/ |_) |
+   |_|  \____/|_|  |_|\___|_.__/  
+       ${cyan}By Emperor Sukuna${reset}
+       WhatsApp: +2250501889640
+       Instagram: j.m.h.2024
+"
 }
 
-# Fonction de vérification de modification du script
-check_script_integrity() {
-    original_script_hash="d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2"  # Remplacez par le hash MD5 du script original
-    current_script_hash=$(md5sum "$0" | awk '{ print $1 }')
-    
-    if [ "$original_script_hash" != "$current_script_hash" ]; then
-        echo "Le script a été modifié, il ne fonctionne plus."
-        exit 1
-    fi
+# Fonction: mot de passe Termux
+set_password() {
+  echo -e "${cyan}Créer un mot de passe pour Termux${reset}"
+  read -p "New password: " pass1
+  read -p "Enter password again: " pass2
+  if [[ "$pass1" == "$pass2" ]]; then
+    echo "echo 'Mot de passe Termux'" > ~/.termuxpass
+    echo "[[ \$(read -p 'Password: ' p; echo \$p) == \"$pass1\" ]]" >> ~/.termuxpass
+    echo "|| { echo 'Mot de passe incorrect'; exit; }" >> ~/.termuxpass
+    chmod +x ~/.termuxpass
+    grep -qxF 'source ~/.termuxpass' ~/.bashrc || echo "source ~/.termuxpass" >> ~/.bashrc
+    echo -e "${green}Mot de passe activé avec succès !${reset}"
+  else
+    echo -e "${red}Les mots de passe ne correspondent pas.${reset}"
+  fi
+  sleep 2
+  menu
 }
 
-# Fonction pour afficher le menu
-show_menu() {
-    display_logo
-    echo "1. Installer Node.js"
-    echo "2. Installer Python"
-    echo "3. Installer Java"
-    echo "4. Changer la couleur de Termux"
-    echo "5. Ajouter un mot de passe à Termux"
-    echo "6. Quitter"
-    echo "-------------------------------------------"
-    read -p "Choisissez une option : " option
+# Fonction: changer couleurs Termux
+change_color() {
+  echo -e "${cyan}Changer les couleurs de Termux${reset}"
+  pkg install termux-api -y
+  termux-reload-settings
+  termux-style
+  sleep 2
+  menu
 }
 
-# Fonction pour installer Node.js
-install_nodejs() {
-    apt update && apt upgrade -y
-    apt install nodejs -y
-    apt install npm -y
-    echo "Node.js et NPM ont été installés."
-    read -p "Appuyez sur Entrée pour revenir au menu."
+# Installation langages
+install_node() {
+  pkg uninstall nodejs -y
+  pkg install nodejs -y
+  sleep 2
+  menu
 }
 
-# Fonction pour installer Python
 install_python() {
-    apt update && apt upgrade -y
-    apt install python python3 python3-pip -y
-    echo "Python a été installé."
-    read -p "Appuyez sur Entrée pour revenir au menu."
+  pkg uninstall python -y
+  pkg install python -y
+  sleep 2
+  menu
 }
 
-# Fonction pour installer Java
 install_java() {
-    apt update && apt upgrade -y
-    apt install default-jdk -y
-    echo "Java a été installé."
-    read -p "Appuyez sur Entrée pour revenir au menu."
+  pkg uninstall openjdk -y
+  pkg install openjdk -y
+  sleep 2
+  menu
 }
 
-# Fonction pour changer la couleur de Termux
-change_termux_colors() {
-    echo "Choisissez une couleur pour le texte :"
-    echo "1. Rouge"
-    echo "2. Vert"
-    echo "3. Bleu"
-    read -p "Choisissez une couleur (1/2/3) : " color_option
-    
-    if [ "$color_option" == "1" ]; then
-        echo -e "\033[31mTexte rouge sélectionné."
-    elif [ "$color_option" == "2" ]; then
-        echo -e "\033[32mTexte vert sélectionné."
-    elif [ "$color_option" == "3" ]; then
-        echo -e "\033[34mTexte bleu sélectionné."
-    fi
-    read -p "Appuyez sur Entrée pour revenir au menu."
+install_php() {
+  pkg uninstall php -y
+  pkg install php -y
+  sleep 2
+  menu
 }
 
-# Fonction pour ajouter un mot de passe à Termux
-add_password() {
-    echo "Entrez un nouveau mot de passe : "
-    read -sp "New password: " password
-    echo
-    read -sp "Enter password again: " password2
-    echo
-
-    if [ "$password" == "$password2" ]; then
-        echo "$password" > ~/.termux_password
-        echo "Mot de passe enregistré avec succès."
-        echo "À partir de maintenant, vous devrez entrer votre mot de passe avant d'utiliser Termux."
-    else
-        echo "Les mots de passe ne correspondent pas."
-    fi
-    read -p "Appuyez sur Entrée pour revenir au menu."
+install_ruby() {
+  pkg uninstall ruby -y
+  pkg install ruby -y
+  sleep 2
+  menu
 }
 
-# Fonction de verrouillage de Termux avec mot de passe
-lock_termux() {
-    if [ -f ~/.termux_password ]; then
-        echo "Entrez votre mot de passe pour accéder à Termux :"
-        read -sp "Password: " entered_password
-        echo
-
-        saved_password=$(cat ~/.termux_password)
-
-        if [ "$entered_password" != "$saved_password" ]; then
-            echo "Mot de passe incorrect. Termux se ferme."
-            exit 1
-        fi
-    fi
+install_perl() {
+  pkg uninstall perl -y
+  pkg install perl -y
+  sleep 2
+  menu
 }
 
-# Fonction principale pour exécuter le script
-main() {
-    check_script_integrity
-    lock_termux
-    while true; do
-        show_menu
-        case $option in
-            1)
-                install_nodejs
-                ;;
-            2)
-                install_python
-                ;;
-            3)
-                install_java
-                ;;
-            4)
-                change_termux_colors
-                ;;
-            5)
-                add_password
-                ;;
-            6)
-                exit 0
-                ;;
-            *)
-                echo "Option invalide. Essayez à nouveau."
-                ;;
-        esac
-    done
+install_c() {
+  pkg uninstall clang -y
+  pkg install clang -y
+  sleep 2
+  menu
 }
 
-# Exécution du script
-main
+menu() {
+logo
+echo -e "${green}1. Installer NodeJS"
+echo "2. Installer Python"
+echo "3. Installer Java"
+echo "4. Installer PHP"
+echo "5. Installer Ruby"
+echo "6. Installer Perl"
+echo "7. Installer C/C++"
+echo "8. Changer couleur de Termux"
+echo "9. Activer mot de passe au démarrage"
+echo "0. Quitter${reset}"
+read -p "Choix > " choix
+
+case $choix in
+  1) install_node ;;
+  2) install_python ;;
+  3) install_java ;;
+  4) install_php ;;
+  5) install_ruby ;;
+  6) install_perl ;;
+  7) install_c ;;
+  8) change_color ;;
+  9) set_password ;;
+  0) exit ;;
+  *) echo -e "${red}Choix invalide${reset}"; sleep 1; menu ;;
+esac
+}
+
+menu

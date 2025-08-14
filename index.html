@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test API – Stream & Download (responsive, one-file)</title>
+  <style>
+    :root{
+      --bg:#0f1115; --card:#171a21; --muted:#9aa4b2; --txt:#e6e9ef; --accent:#4da3ff; --bad:#ff6b6b; --good:#20c997;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+      background: radial-gradient(1200px 600px at 20% -10%, #1b2130 0%, #0f1115 60%);
+      color:var(--txt); display:flex; flex-direction:column; align-items:center;
+    }
+    header{
+      width:min(1100px,100%); padding:18px clamp(14px,3vw,28px); display:flex; gap:14px; align-items:center; justify-content:space-between;
+      position:sticky; top:0; backdrop-filter:saturate(1.2) blur(10px); background:linear-gradient(180deg,#0f1115cc,#0f111580 60%,#0f111500);
+      z-index:5; border-bottom:1px solid #202635; flex-wrap:wrap;
+    }
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{
+      width:34px; aspect-ratio:1/1; border-radius:10px; background:
+        radial-gradient(60% 60% at 30% 30%, #6cc1ff, #4da3ff 40%, #2b6fff 70%, #1a2f66 100%);
+      box-shadow:0 6px 24px #2b6fff40 inset, 0 0 0 1px #2b6fff66 inset;
+    }
+    h1{margin:0; font-size:clamp(16px,2.2vw,20px); font-weight:650; letter-spacing:.2px}
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    button,.btn{
+      border:1px solid #2a3346; background:#121621; color:var(--txt); border-radius:10px; padding:10px 14px;
+      cursor:pointer; font-weight:600; transition:transform .05s ease, background .2s ease, border-color .2s ease;
+    }
+    button:hover{background:#11192a}
+    button:active{transform:translateY(1px)}
+    .primary{background:linear-gradient(180deg,#357dff,#2b6fff); border-color:#2b6fff; color:white}
+    .ghost{background:transparent}
+    .pill{border-radius:999px}
+
+    .search{
+      display:flex; gap:8px; align-items:center; flex:1 1 320px; min-width:260px;
+      border:1px solid #243048; border-radius:999px; padding:6px 8px; background:#0c111a;
+    }
+    .search input{
+      background:transparent; border:none; outline:none; color:var(--txt); width:100%; padding:8px 10px; font-size:14px;
+    }
+    .search .hint{font-size:12px; color:var(--muted); margin-left:6px}
+
+    main{width:min(1100px,100%); padding:clamp(14px,3vw,28px); display:grid; gap:20px}
+    .grid{display:grid; gap:18px; grid-template-columns:1fr}
+    @media (min-width:780px){ .grid{ grid-template-columns: 1.2fr .8fr; } }
+
+    .card{
+      background:linear-gradient(180deg,#121621,#0e121a); border:1px solid #222a3a; border-radius:var(--radius);
+      padding:16px; box-shadow:0 10px 30px #00000044;
+    }
+    .title{font-size:clamp(18px,2.5vw,22px); font-weight:700; margin:0 0 10px}
+    .extraTitle{
+      margin: 2px 0 12px;
+      font-size: clamp(15px, 2vw, 18px);
+      font-weight: 600;
+      color: #d5e0ff;
+      letter-spacing:.2px;
+      min-height:1.2em;
+    }
+    .muted{color:var(--muted); font-size:14px}
+    .media{
+      position:relative; overflow:hidden; border-radius:12px; border:1px solid #252f42; background:#0b0f16;
+      aspect-ratio:16/9; display:grid; place-items:center; margin-bottom:14px;
+    }
+    .media video{width:100%; height:100%; display:block; background:#000}
+    .skeleton{
+      width:100%; height:100%; background:linear-gradient(90deg,#121621,#171d2a,#121621);
+      animation:shimmer 1.6s infinite; border-radius:12px;
+    }
+    @keyframes shimmer{ 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .badge{font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid #243048; color:#cfe0ff; background:#0f1522}
+    .ok{border-color:#1f4636; background:#0f1f1a; color:#b9f5d0}
+    .err{border-color:#4a2a2a; background:#241416; color:#ffb3b3}
+
+    .kv{display:grid; grid-template-columns:auto 1fr; gap:6px 10px; font-size:14px}
+    .kv .k{color:#9aa4b2}
+    .kv .v{color:#e6e9ef}
+
+    .linkrow{display:flex; gap:10px; flex-wrap:wrap}
+    .code{
+      display:inline-block; max-width:100%; overflow:auto; white-space:nowrap; background:#0b0f16; border:1px solid #1f2736;
+      padding:6px 8px; border-radius:8px; color:#d5e0ff; font-size:13px
+    }
+
+    footer{opacity:.7; font-size:13px; padding:20px; text-align:center}
+
+    .gate{
+      position:fixed; inset:0; display:grid; place-items:center; background:rgba(8,10,14,.85); backdrop-filter:blur(6px);
+      z-index:10; padding:20px;
+    }
+    .gate .box{
+      width:min(520px,100%); background:#0f141d; border:1px solid #243048; border-radius:16px; padding:20px;
+      text-align:center; box-shadow:0 20px 60px #0008;
+    }
+    .gate h2{margin:0 0 8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <h1>API Random – Stream & Download</h1>
+    </div>
+
+    <!-- Barre pour ajouter un titre perso -->
+    <div class="search" role="search">
+      <input id="titleInput" type="text" placeholder="Titre perso (sous-titre)" aria-label="Titre personnalisé">
+      <button id="applyTitleBtn" class="pill">Ajouter titre</button>
+      <span class="hint">Astuce : ?title= dans l’URL</span>
+    </div>
+
+    <div class="actions">
+      <button id="refreshBtn" class="primary pill">↻ Charger</button>
+      <button id="copyJSON" class="pill ghost">Voir JSON</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <article class="card">
+        <h2 class="title" id="title">Rien chargé pour le moment</h2>
+        <div class="extraTitle" id="extraTitle"></div>
+        <div class="muted" id="subtitle">Clique sur “Charger”.</div>
+
+        <div class="media" id="media">
+          <div class="skeleton" aria-hidden="true" style="display:none"></div>
+        </div>
+
+        <div class="row" style="margin-bottom:12px">
+          <span class="badge" id="statusBadge">Statut : —</span>
+          <span class="badge" id="typeBadge">Type : —</span>
+        </div>
+
+        <div class="kv" style="margin-bottom:12px">
+          <div class="k">Durée</div> <div class="v" id="kvDuration">—</div>
+          <div class="k">Note</div>   <div class="v" id="kvRating">—</div>
+          <div class="k">Vues</div>   <div class="v" id="kvViews">—</div>
+          <div class="k">ID</div>     <div class="v" id="kvId">—</div>
+        </div>
+
+        <div class="linkrow" style="margin-bottom:8px">
+          <a class="btn" id="btnOpenStream" href="#" target="_blank" rel="noopener">Ouvrir le stream</a>
+          <button class="btn" id="btnCopyStream">Copier stream</button>
+          <span class="code" id="codeStream">—</span>
+        </div>
+        <div class="linkrow">
+          <a class="btn" id="btnOpenDownload" href="#" target="_blank" rel="noopener">Télécharger</a>
+          <button class="btn" id="btnCopyDownload">Copier download</button>
+          <span class="code" id="codeDownload">—</span>
+        </div>
+      </article>
+
+      <aside class="card">
+        <h3 style="margin-top:0">À propos</h3>
+        <p class="muted">
+          Cette page <strong>responsive</strong> consomme <code>https://web-production-7115f.up.railway.app/api/xnxx/random</code>,
+          utilise <code>streamEndpoint</code> et <code>downloadEndpoint</code> renvoyés par l’API (endpoints <em>relatifs</em>) et
+          construit les URLs absolues automatiquement.
+        </p>
+        <ul class="muted">
+          <li>Titre perso sous le titre principal (et support <code>?title=</code>).</li>
+          <li>Lecteur vidéo si <code>hasVideo</code> est vrai.</li>
+          <li>Bouton Télécharger si <code>canDownload</code> est vrai.</li>
+          <li>Badges d’état, timeout, affichage JSON debug.</li>
+        </ul>
+        <div class="muted" style="font-size:12px;margin-top:10px">
+          Si tu vois une erreur CORS, sers ce fichier via un petit serveur (ex : <code>npx serve</code>) et assure-toi que l’API autorise ton origine.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <footer>Démo responsive • © 2025</footer>
+
+  <!-- Age Gate -->
+  <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+    <div class="box">
+      <h2 id="gate-title">Contenu pour adultes (18+)</h2>
+      <p class="muted">En poursuivant, tu confirmes être majeur. Cette page ne crée pas de contenu ; elle teste une API distante.</p>
+      <div class="row" style="justify-content:center; margin-top:12px">
+        <button class="pill" id="leaveBtn">Quitter</button>
+        <button class="primary pill" id="enterBtn">J’ai 18+ ans</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== Config ======
+    const BASE = "https://web-production-7115f.up.railway.app"; // racine
+    const API_URL = BASE + "/api/xnxx/random";
+
+    // ====== UI refs ======
+    const ui = {
+      title: document.getElementById("title"),
+      extraTitle: document.getElementById("extraTitle"),
+      titleInput: document.getElementById("titleInput"),
+      applyTitleBtn: document.getElementById("applyTitleBtn"),
+      subtitle: document.getElementById("subtitle"),
+      media: document.getElementById("media"),
+      statusBadge: document.getElementById("statusBadge"),
+      typeBadge: document.getElementById("typeBadge"),
+      kvDuration: document.getElementById("kvDuration"),
+      kvRating: document.getElementById("kvRating"),
+      kvViews: document.getElementById("kvViews"),
+      kvId: document.getElementById("kvId"),
+      btnOpenStream: document.getElementById("btnOpenStream"),
+      btnCopyStream: document.getElementById("btnCopyStream"),
+      btnOpenDownload: document.getElementById("btnOpenDownload"),
+      btnCopyDownload: document.getElementById("btnCopyDownload"),
+      codeStream: document.getElementById("codeStream"),
+      codeDownload: document.getElementById("codeDownload"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      copyJSON: document.getElementById("copyJSON"),
+      gate: document.getElementById("gate"),
+      enterBtn: document.getElementById("enterBtn"),
+      leaveBtn: document.getElementById("leaveBtn"),
+      skeleton: null
+    };
+    ui.skeleton = ui.media.querySelector(".skeleton");
+
+    // ====== Helpers ======
+    function setBadge(el, text, kind=""){
+      el.textContent = text;
+      el.classList.remove("ok","err");
+      if (kind) el.classList.add(kind);
+    }
+    function clearMedia(){
+      [...ui.media.children].forEach(n=>{
+        if(!n.classList || !n.classList.contains("skeleton")) n.remove();
+      });
+    }
+    function asAbs(endpoint){
+      if(!endpoint) return null;
+      try{
+        // si déjà absolu, renvoie tel quel
+        const u = new URL(endpoint, BASE);
+        return u.toString();
+      }catch{ return null; }
+    }
+    function fmtViews(n){
+      if(typeof n !== "number") return String(n ?? "—");
+      if(n >= 1_000_000) return (n/1_000_000).toFixed(1).replace(".0","")+" M";
+      if(n >= 1_000) return (n/1_000).toFixed(1).replace(".0","")+" k";
+      return String(n);
+    }
+    async function fetchWithTimeout(resource, options = {}) {
+      const { timeout = 15000 } = options;
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+      try {
+        const response = await fetch(resource, { ...options, signal: controller.signal });
+        clearTimeout(id); return response;
+      } catch (e) { clearTimeout(id); throw e; }
+    }
+    function applyExtraTitle(text){
+      const t = (text || "").trim();
+      ui.extraTitle.textContent = t;
+      const url = new URL(window.location.href);
+      if (t) url.searchParams.set("title", t); else url.searchParams.delete("title");
+      history.replaceState(null, "", url.toString());
+    }
+    function initExtraTitleFromURL(){
+      const url = new URL(window.location.href);
+      const t = url.searchParams.get("title");
+      if (t) { ui.titleInput.value = t; ui.extraTitle.textContent = t; }
+    }
+
+    // ====== Rendering from API shape (selon ta capture) ======
+    function renderFromApiPayload(payload){
+      const ok = payload && payload.success === true && payload.data;
+      if(!ok) throw new Error("Réponse inattendue");
+      const d = payload.data;
+
+      const streamURL = asAbs(d.streamEndpoint);
+      const downloadURL = asAbs(d.downloadEndpoint);
+
+      ui.title.textContent = d.title || "Sans titre";
+      ui.subtitle.textContent = "Résultat chargé depuis l’API.";
+      ui.kvDuration.textContent = d.duration || "—";
+      ui.kvRating.textContent = d.rating || "—";
+      ui.kvViews.textContent = fmtViews(d.views);
+      ui.kvId.textContent = d.id || "—";
+
+      // liens + codes
+      ui.btnOpenStream.href = streamURL || "#";
+      ui.btnOpenStream.style.pointerEvents = streamURL ? "auto" : "none";
+      ui.codeStream.textContent = streamURL || "—";
+
+      ui.btnOpenDownload.href = downloadURL || "#";
+      ui.btnOpenDownload.style.pointerEvents = downloadURL ? "auto" : "none";
+      ui.codeDownload.textContent = downloadURL || "—";
+
+      // badges
+      setBadge(ui.statusBadge, "Statut : OK", "ok");
+      setBadge(ui.typeBadge, d.hasVideo ? "Type : vidéo" : "Type : —");
+
+      // media
+      clearMedia();
+      if (d.hasVideo && streamURL){
+        const vid = document.createElement("video");
+        vid.setAttribute("controls","true");
+        vid.setAttribute("playsinline","true");
+        vid.setAttribute("preload","metadata");
+        vid.src = streamURL;
+        ui.media.appendChild(vid);
+      } else {
+        const fallback = document.createElement("div");
+        fallback.style.color = "var(--muted)";
+        fallback.style.padding = "10px";
+        fallback.textContent = "Aperçu vidéo indisponible.";
+        ui.media.appendChild(fallback);
+      }
+    }
+
+    // ====== Load ======
+    async function loadRandom(){
+      setBadge(ui.statusBadge, "Statut : chargement…");
+      setBadge(ui.typeBadge, "Type : —");
+      ui.skeleton.style.display = "block";
+      clearMedia();
+
+      try{
+        const res = await fetchWithTimeout(API_URL, { timeout: 20000 });
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        const json = await res.json();
+        renderFromApiPayload(json);
+      }catch(err){
+        console.error(err);
+        setBadge(ui.statusBadge, "Statut : erreur", "err");
+        setBadge(ui.typeBadge, "Type : —");
+        clearMedia();
+        const box = document.createElement("div");
+        box.style.padding = "14px";
+        box.style.textAlign = "center";
+        box.innerHTML = `<div style="margin-bottom:8px">Impossible de charger les données.</div>
+                         <div class="muted" style="font-size:12px">Détail : ${String(err.message || err)}</div>`;
+        ui.media.appendChild(box);
+      }finally{
+        ui.skeleton.style.display = "none";
+      }
+    }
+
+    // ====== Events ======
+    document.getElementById("refreshBtn").addEventListener("click", loadRandom);
+    document.getElementById("copyJSON").addEventListener("click", async ()=>{
+      try{
+        const r = await fetch(API_URL); const t = await r.text();
+        await navigator.clipboard.writeText(t);
+        ui.copyJSON.textContent = "JSON copié ✓"; setTimeout(()=> ui.copyJSON.textContent = "Voir JSON", 1200);
+      }catch{ ui.copyJSON.textContent = "Échec copie"; setTimeout(()=> ui.copyJSON.textContent = "Voir JSON", 1200); }
+    });
+    ui.btnCopyStream.addEventListener("click", async ()=>{
+      const v = ui.codeStream.textContent;
+      try{ await navigator.clipboard.writeText(v); ui.btnCopyStream.textContent = "Copié ✓"; }
+      catch{ ui.btnCopyStream.textContent = "Échec"; }
+      setTimeout(()=> ui.btnCopyStream.textContent = "Copier stream", 900);
+    });
+    ui.btnCopyDownload.addEventListener("click", async ()=>{
+      const v = ui.codeDownload.textContent;
+      try{ await navigator.clipboard.writeText(v); ui.btnCopyDownload.textContent = "Copié ✓"; }
+      catch{ ui.btnCopyDownload.textContent = "Échec"; }
+      setTimeout(()=> ui.btnCopyDownload.textContent = "Copier download", 900);
+    });
+
+    ui.applyTitleBtn.addEventListener("click", ()=> applyExtraTitle(ui.titleInput.value));
+    ui.titleInput.addEventListener("keydown", (e)=>{ if(e.key==="Enter") applyExtraTitle(ui.titleInput.value); });
+    initExtraTitleFromURL();
+
+    // Age gate
+    ui.enterBtn.addEventListener("click", ()=>{ ui.gate.style.display = "none"; loadRandom(); });
+    ui.leaveBtn.addEventListener("click", ()=>{ window.location.href = "about:blank"; });
+  </script>
+</body>
+</html>
